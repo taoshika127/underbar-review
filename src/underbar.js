@@ -270,7 +270,6 @@
     for (var i = 1; i < arguments.length; i++) {
       array.push(arguments[i]);
     }
-
     return _.reduce(array, function(obj, extendedObj) {
       _.each(extendedObj, function(element, key) {
         if (!obj.hasOwnProperty(key)) {
@@ -366,7 +365,6 @@
     while (copyArray.length > 0) {
       var randomNum = Math.floor(Math.random() * copyArray.length);
       result.push(copyArray.pop(copyArray[randomNum]));
-
     }
     return result;
   };
