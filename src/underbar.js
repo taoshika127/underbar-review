@@ -381,6 +381,10 @@
   // Calls the method named by functionOrKey on each value in the list.
   // Note: You will need to learn a bit about .apply to complete this.
   _.invoke = function(collection, functionOrKey, args) {
+    return _.map(collection, function(element) {
+      return (element[functionOrKey]) ? element[functionOrKey](args) : functionOrKey.apply(element, args);
+    });
+
   };
 
   // Sort the object's values by a criterion produced by an iterator.
@@ -388,6 +392,8 @@
   // of that string. For example, _.sortBy(people, 'name') should sort
   // an array of people by their name.
   _.sortBy = function(collection, iterator) {
+    return (typeof iterator === 'string') ? collection.sort((a, b) => a[iterator] - b[iterator]) :
+      collection.sort((a, b) => iterator(a) - iterator(b));
   };
 
   // Zip together two or more arrays with elements of the same index
@@ -396,6 +402,24 @@
   // Example:
   // _.zip(['a','b','c','d'], [1,2,3]) returns [['a',1], ['b',2], ['c',3], ['d',undefined]]
   _.zip = function() {
+    var arrs = [];
+    for (var i = 0; i < arguments.length; i++) {
+      arrs.push(arguments[i]);
+    }
+    var copyArrs = arrs.slice();
+    var sortedArrs = _.sortBy(copyArrs, 'length');
+    var maxLength = sortedArrs[sortedArrs.length - 1].length;
+    return _.reduce(arrs, function(acc, arr) {
+      arr = arr.concat(Array(maxLength - arr.length).fill(undefined));
+      _.each(arr, function(element, index) {
+        if (!acc[index]) {
+          acc[index] = [];
+        }
+        acc[index].push(element);
+      });
+      console.log(acc);
+      return acc;
+    }, []);
   };
 
   // Takes a multidimensional array and converts it to a one-dimensional array.
@@ -403,16 +427,55 @@
   //
   // Hint: Use Array.isArray to check if something is an array
   _.flatten = function(nestedArray, result) {
+    if (!Array.isArray(nestedArray)) {
+      return nestedArray;
+    }
+    return _.reduce(nestedArray, function(acc, element) {
+      if (!Array.isArray(element)) {
+        acc.push(element);
+      } else {
+        acc = acc.concat(_.flatten(element));
+      }
+      return acc;
+    }, []);
   };
 
   // Takes an arbitrary number of arrays and produces an array that contains
   // every item shared between all the passed-in arrays.
   _.intersection = function() {
+    var arrs = [];
+    for (var i = 0; i < arguments.length; i++) {
+      arrs.push(arguments[i]);
+    }
+    var flattened = _.flatten(...arrs);
+    return _.reduce(flattened, function(acc, element) {
+      var include = true;
+      _.each(arrs, function(arr) {
+        if (include && !arr.includes(element)) {
+          include = false;
+        }
+      });
+      if (include) {
+        acc.push(element);
+      }
+      return acc;
+    }, []);
   };
 
   // Take the difference between one array and a number of other arrays.
   // Only the elements present in just the first array will remain.
   _.difference = function(array) {
+    var otherArrs = [];
+    for (var i = 1; i < arguments.length; i++) {
+      otherArrs.push(arguments[i]);
+    }
+    otherArrs = _.flatten(otherArrs);
+    return _.reduce(array, function(acc, element) {
+      if (!_.contains(otherArrs, element)) {
+        acc.push(element);
+      }
+      return acc;
+    }, []);
   };
 
   // Returns a function, that, when invoked, will only be triggered at most once
@@ -421,5 +484,26 @@
   //
   // Note: This is difficult! It may take a while to implement.
   _.throttle = function(func, wait) {
+    var result, startTime;
+    var haveToWait = false;
+    return function () {
+      if (haveToWait) {
+        return result;
+      } else {
+        if (!result && !startTime || (Date.now() - startTime) > wait) {
+          startTime = Date.now();
+          result = func.apply(this, arguments);
+          return result;
+        } else if (wait > Date.now() - startTime) {
+          haveToWait = true;
+          _.delay(function() {
+            result = func.apply(this, arguments);
+            startTime = Date.now();
+            haveToWait = false;
+            return result;
+          }, wait + 1 - (Date.now() - startTime));
+        }
+      }
+    };
   };
 }());
